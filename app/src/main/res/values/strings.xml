@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Jitter</string>
+    <string name="twitter_id_hint">Enter twitter name to search</string>
+    <string name="search_button">SEARCH</string>
 </resources>
