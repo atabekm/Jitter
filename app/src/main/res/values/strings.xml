@@ -2,4 +2,5 @@
     <string name="app_name">Jitter</string>
     <string name="twitter_id_hint">Enter twitter name to search</string>
     <string name="search_button">SEARCH</string>
+    <string name="twitter_id_error">Twitter name can only contain alphanumeric characters (letters A-Z, numbers 0-9) and underscore, and it cannot be longer than 15 characters.</string>
 </resources>
