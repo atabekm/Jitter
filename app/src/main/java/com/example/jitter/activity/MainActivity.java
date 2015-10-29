@@ -1,4 +1,4 @@
-package com.example.jitter;
+package com.example.jitter.activity;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
@@ -8,6 +8,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.jitter.util.Constants;
+import com.example.jitter.R;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -16,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         final EditText etTwitterName = (EditText) findViewById(R.id.edit_text_twitter_id);
+        etTwitterName.setText("jack");
         final TextView tvTwitterNameError = (TextView) findViewById(R.id.text_view_twitter_id_error);
         Button buttonSearch = (Button) findViewById(R.id.button_search);
         buttonSearch.setOnClickListener(new View.OnClickListener() {

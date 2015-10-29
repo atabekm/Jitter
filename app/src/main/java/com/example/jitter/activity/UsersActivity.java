@@ -1,8 +1,12 @@
-package com.example.jitter;
+package com.example.jitter.activity;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+
+import com.example.jitter.util.Constants;
+import com.example.jitter.R;
+import com.example.jitter.fragment.TweetsFragment;
 
 public class UsersActivity extends AppCompatActivity {
 
@@ -24,7 +28,6 @@ public class UsersActivity extends AppCompatActivity {
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             // Replace the contents of the container with the new fragment
             ft.replace(R.id.placeholder, fragment);
-            // or ft.add(R.id.placeholder, new FooFragment());
             // Complete the changes added above
             ft.commit();
         }
