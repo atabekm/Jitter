@@ -3,6 +3,7 @@ package com.example.jitter.fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,7 +31,7 @@ import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
 public class TweetsFragment extends Fragment {
-    private List<TweetRealm> mData;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
     private CompositeSubscription subscription = new CompositeSubscription();
     private String twitterName;
     private Realm realm;
@@ -41,7 +42,6 @@ public class TweetsFragment extends Fragment {
 
         twitterName = getArguments().getString(Constants.TWITTER_USER_NAME);
 
-        mData = new ArrayList<>();
         realm = Realm.getDefaultInstance();
     }
 
@@ -86,6 +86,18 @@ public class TweetsFragment extends Fragment {
 
         getData(maxId);
 
+        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_to_refresh);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                Log.e("TAG", "onRefresh");
+                mSwipeRefreshLayout.setRefreshing(true);
+                String id = realm.where(TweetRealm.class).equalTo("owner", twitterName).findAll().max("id").toString();
+                Log.e("TAG", "last twitter id onRefresh: " + id);
+                getData(id);
+            }
+        });
+
         return view;
     }
 
@@ -106,6 +118,7 @@ public class TweetsFragment extends Fragment {
                     @Override
                     public void onCompleted() {
                         Log.e("TAG", "onCompleted");
+                        mSwipeRefreshLayout.setRefreshing(false);
                     }
 
                     @Override
@@ -115,7 +128,8 @@ public class TweetsFragment extends Fragment {
 
                     @Override
                     public void onNext(List<TweetJson> tweets) {
-                        Log.e("TAG", "Number of tweets found: " + tweets.size());
+                        Log.e("TAG", "Number of new tweets found: " + tweets.size());
+                        List<TweetRealm> mData = new ArrayList<>();
                         for (TweetJson t : tweets) {
                             TweetRealm tw = new TweetRealm();
                             tw.setId(t.id);
@@ -134,10 +148,12 @@ public class TweetsFragment extends Fragment {
                             mData.add(tw);
                         }
 
-                        realm.beginTransaction();
-                        realm.copyToRealmOrUpdate(mData);
-                        realm.commitTransaction();
-                        Log.e("TAG", "Number of new data added: " + mData.size());
+                        Log.e("TAG", "Number of new tweets to be added to DB: " + mData.size());
+                        if (tweets.size() > 0) {
+                            realm.beginTransaction();
+                            realm.copyToRealmOrUpdate(mData);
+                            realm.commitTransaction();
+                        }
                     }
                 }
             )
