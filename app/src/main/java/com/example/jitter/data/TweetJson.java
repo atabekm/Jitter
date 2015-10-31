@@ -1,11 +1,13 @@
 package com.example.jitter.data;
 
 public class TweetJson {
+    public final long id;
     public final User user;
     public final Retweeted_Status retweeted_status;
     public final String text;
 
-    public TweetJson(String screen_name, String text, String profile_image_url, String original_name, String original_text, String original_image_url) {
+    public TweetJson(long id, String screen_name, String text, String profile_image_url, String original_name, String original_text, String original_image_url) {
+        this.id = id;
         user = new User(screen_name, profile_image_url);
         retweeted_status = new Retweeted_Status(original_text, original_name, original_image_url);
         this.text = text;

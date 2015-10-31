@@ -12,9 +12,13 @@ import rx.Observable;
 public interface TwitterService {
     @Headers({Constants.TWITTER_API_HEADER})
     @GET("/1.1/statuses/user_timeline.json")
-    Observable<List<TweetJson>> getTimeline(@Query("screen_name") String screen_name);
+    Observable<List<TweetJson>> getTimeline(
+            @Query("screen_name") String screen_name,
+            @Query("since_id") String since_id);
 
     @Headers({Constants.TWITTER_API_HEADER})
     @GET("/1.1/favorites/list.json")
-    Observable<List<TweetJson>> getFavourites(@Query("screen_name") String screen_name);
+    Observable<List<TweetJson>> getFavourites(
+            @Query("screen_name") String screen_name,
+            @Query("since_id") String since_id);
 }

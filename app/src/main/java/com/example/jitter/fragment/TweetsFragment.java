@@ -3,23 +3,24 @@ package com.example.jitter.fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 
 import com.example.jitter.R;
-import com.example.jitter.adapter.TweetAdapter;
-import com.example.jitter.data.Tweet;
+import com.example.jitter.adapter.RealmAdapter;
 import com.example.jitter.data.TweetJson;
+import com.example.jitter.data.TweetRealm;
 import com.example.jitter.data.TwitterService;
 import com.example.jitter.util.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import io.realm.Realm;
+import io.realm.RealmResults;
 import retrofit.GsonConverterFactory;
 import retrofit.Retrofit;
 import retrofit.RxJavaCallAdapterFactory;
@@ -29,10 +30,10 @@ import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
 public class TweetsFragment extends Fragment {
-    private TweetAdapter mAdapter;
-    private List<Tweet> mData;
+    private List<TweetRealm> mData;
     private CompositeSubscription subscription = new CompositeSubscription();
     private String twitterName;
+    private Realm realm;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,6 +42,7 @@ public class TweetsFragment extends Fragment {
         twitterName = getArguments().getString(Constants.TWITTER_USER_NAME);
 
         mData = new ArrayList<>();
+        realm = Realm.getDefaultInstance();
     }
 
     @Override
@@ -59,25 +61,35 @@ public class TweetsFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        realm.close();
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tweets, container, false);
+        String maxId = null;
 
-        RecyclerView mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
-        LinearLayoutManager mLayoutManager = new LinearLayoutManager(getContext());
-        mRecyclerView.setLayoutManager(mLayoutManager);
+        RealmResults<TweetRealm> data = realm.where(TweetRealm.class).equalTo("owner", twitterName).findAll();
+        Log.e("TAG", "Number of search results: " + data.size());
+        if (data.size() > 0) {
+            maxId = data.max("id").toString();
+            Log.e("TAG", "Number of max id: " + maxId);
+        }
+        data.sort("id", RealmResults.SORT_ORDER_DESCENDING);
+        RealmAdapter adapter = new RealmAdapter(getActivity(), data);
+        ListView listView = (ListView) view.findViewById(R.id.list_view);
+        listView.setAdapter(adapter);
 
-        mData = new ArrayList<>();
-        mAdapter = new TweetAdapter(mData, getContext());
-        mRecyclerView.setAdapter(mAdapter);
-
-        getData();
+        getData(maxId);
 
         return view;
     }
 
-    private void getData() {
+    private void getData(String maxId) {
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(Constants.TWITTER_BASE_API)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -87,13 +99,13 @@ public class TweetsFragment extends Fragment {
         TwitterService twitterService = retrofit.create(TwitterService.class);
 
         subscription.add(
-            twitterService.getTimeline(twitterName)
+            twitterService.getTimeline(twitterName, maxId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<List<TweetJson>>() {
                     @Override
                     public void onCompleted() {
-                        mAdapter.updateResults(mData);
+                        Log.e("TAG", "onCompleted");
                     }
 
                     @Override
@@ -103,21 +115,29 @@ public class TweetsFragment extends Fragment {
 
                     @Override
                     public void onNext(List<TweetJson> tweets) {
+                        Log.e("TAG", "Number of tweets found: " + tweets.size());
                         for (TweetJson t : tweets) {
-                            Tweet tw = new Tweet();
+                            TweetRealm tw = new TweetRealm();
+                            tw.setId(t.id);
+                            tw.setOwner(t.user.screen_name);
                             if (t.retweeted_status != null) {
-                                tw.setAuthor("@" + t.retweeted_status.user.screen_name);
-                                tw.setText(t.retweeted_status.text);
-                                tw.setAvatarUrl(t.retweeted_status.user.profile_image_url.replace("_normal", ""));
+                                tw.setUserName("@" + t.retweeted_status.user.screen_name);
+                                tw.setMessage(t.retweeted_status.text);
+                                tw.setImageUrl(t.retweeted_status.user.profile_image_url.replace("_normal", ""));
                                 tw.setIsRetweet(true);
                             } else {
-                                tw.setAuthor("@" + t.user.screen_name);
-                                tw.setText(t.text);
-                                tw.setAvatarUrl(t.user.profile_image_url.replace("_normal", ""));
+                                tw.setUserName("@" + t.user.screen_name);
+                                tw.setMessage(t.text);
+                                tw.setImageUrl(t.user.profile_image_url.replace("_normal", ""));
                                 tw.setIsRetweet(false);
                             }
                             mData.add(tw);
                         }
+
+                        realm.beginTransaction();
+                        realm.copyToRealmOrUpdate(mData);
+                        realm.commitTransaction();
+                        Log.e("TAG", "Number of new data added: " + mData.size());
                     }
                 }
             )
