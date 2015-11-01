@@ -43,7 +43,7 @@ public class RealmAdapter extends RealmBaseAdapter<TweetRealm> implements ListAd
         }
 
         TweetRealm item = realmResults.get(position);
-        viewHolder.tvUsername.setText(item.getUserName());
+        viewHolder.tvUsername.setText("@" + item.getUserName());
         viewHolder.tvText.setText(item.getMessage());
         Picasso.with(context)
                 .load(item.getImageUrl())

@@ -4,6 +4,9 @@ import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
 public class TweetRealm extends RealmObject {
+    public static final int TYPE_TIMELINE = 0;
+    public static final int TYPE_FAVORITES = 1;
+
     @PrimaryKey
     private long id;
 
@@ -12,6 +15,7 @@ public class TweetRealm extends RealmObject {
     private String message;
     private String imageUrl;
     private boolean isRetweet;
+    private int type;
 
     public long getId() {
         return id;
@@ -59,5 +63,13 @@ public class TweetRealm extends RealmObject {
 
     public void setIsRetweet(boolean isRetweet) {
         this.isRetweet = isRetweet;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
     }
 }

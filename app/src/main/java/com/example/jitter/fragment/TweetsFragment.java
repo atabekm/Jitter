@@ -1,5 +1,6 @@
 package com.example.jitter.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -8,25 +9,34 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.example.jitter.R;
+import com.example.jitter.activity.FollowersActivity;
 import com.example.jitter.adapter.RealmAdapter;
+import com.example.jitter.data.TweetTuple;
 import com.example.jitter.data.TweetJson;
 import com.example.jitter.data.TweetRealm;
 import com.example.jitter.data.TwitterService;
 import com.example.jitter.util.Constants;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
 import retrofit.GsonConverterFactory;
 import retrofit.Retrofit;
 import retrofit.RxJavaCallAdapterFactory;
+import rx.Observable;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
+import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
@@ -34,13 +44,26 @@ public class TweetsFragment extends Fragment {
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private CompositeSubscription subscription = new CompositeSubscription();
     private String twitterName;
+    private int fragmentType;
+    private boolean fragmentListClickable;
+    private boolean fragmentNestedQuery;
     private Realm realm;
+
+    public static TweetsFragment getInstance(Bundle args) {
+        TweetsFragment fragment = new TweetsFragment();
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        twitterName = getArguments().getString(Constants.TWITTER_USER_NAME);
+        Bundle args = getArguments();
+        twitterName = args.getString(Constants.TWITTER_USER_NAME);
+        fragmentType = args.getInt(Constants.ADAPTER_TYPE);
+        fragmentListClickable = args.getBoolean(Constants.ADAPTER_LIST_CLICKABLE);
+        fragmentNestedQuery = args.getBoolean(Constants.ADAPTER_NESTED_QUERY);
 
         realm = Realm.getDefaultInstance();
     }
@@ -71,9 +94,14 @@ public class TweetsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tweets, container, false);
+        view.setTag(Math.random());
         String maxId = null;
 
-        RealmResults<TweetRealm> data = realm.where(TweetRealm.class).equalTo("owner", twitterName).findAll();
+        RealmResults<TweetRealm> data =
+                realm.where(TweetRealm.class)
+                        .equalTo("owner", twitterName)
+                        .equalTo("type", fragmentType)
+                        .findAll();
         Log.e("TAG", "Number of search results: " + data.size());
         if (data.size() > 0) {
             maxId = data.max("id").toString();
@@ -83,6 +111,23 @@ public class TweetsFragment extends Fragment {
         RealmAdapter adapter = new RealmAdapter(getActivity(), data);
         ListView listView = (ListView) view.findViewById(R.id.list_view);
         listView.setAdapter(adapter);
+        if (fragmentListClickable) {
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    TweetRealm tr = (TweetRealm) parent.getItemAtPosition(position);
+                    String user = tr.getUserName();
+                    if (user.equals(tr.getOwner())) {
+                        Toast.makeText(getContext(), tr.getUserName(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Intent intent = new Intent(getActivity(), FollowersActivity.class);
+                        intent.putExtra(Constants.TWITTER_USER_NAME, user);
+                        startActivity(intent);
+                    }
+
+                }
+            });
+        }
 
         getData(maxId);
 
@@ -92,7 +137,11 @@ public class TweetsFragment extends Fragment {
             public void onRefresh() {
                 Log.e("TAG", "onRefresh");
                 mSwipeRefreshLayout.setRefreshing(true);
-                String id = realm.where(TweetRealm.class).equalTo("owner", twitterName).findAll().max("id").toString();
+                String id = realm.where(TweetRealm.class)
+                        .equalTo("owner", twitterName)
+                        .equalTo("type", fragmentType)
+                        .findAll()
+                        .max("id").toString();
                 Log.e("TAG", "last twitter id onRefresh: " + id);
                 getData(id);
             }
@@ -108,55 +157,134 @@ public class TweetsFragment extends Fragment {
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();
 
-        TwitterService twitterService = retrofit.create(TwitterService.class);
+        final TwitterService twitterService = retrofit.create(TwitterService.class);
 
         subscription.add(
             twitterService.getTimeline(twitterName, maxId)
                 .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<List<TweetJson>>() {
-                    @Override
-                    public void onCompleted() {
-                        Log.e("TAG", "onCompleted");
-                        mSwipeRefreshLayout.setRefreshing(false);
-                    }
+                               @Override
+                               public void onCompleted() {
+                                   Log.e("OBS1", "onCompleted");
+                                   if (mSwipeRefreshLayout.isRefreshing()) {
+                                       mSwipeRefreshLayout.setRefreshing(false);
+                                   }
+                               }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.e("TAG", e.getMessage());
-                    }
+                               @Override
+                               public void onError(Throwable e) {
+                                   Log.e("OBS1", e.getMessage());
+                               }
 
-                    @Override
-                    public void onNext(List<TweetJson> tweets) {
-                        Log.e("TAG", "Number of new tweets found: " + tweets.size());
-                        List<TweetRealm> mData = new ArrayList<>();
-                        for (TweetJson t : tweets) {
-                            TweetRealm tw = new TweetRealm();
-                            tw.setId(t.id);
-                            tw.setOwner(t.user.screen_name);
-                            if (t.retweeted_status != null) {
-                                tw.setUserName("@" + t.retweeted_status.user.screen_name);
-                                tw.setMessage(t.retweeted_status.text);
-                                tw.setImageUrl(t.retweeted_status.user.profile_image_url.replace("_normal", ""));
-                                tw.setIsRetweet(true);
-                            } else {
-                                tw.setUserName("@" + t.user.screen_name);
-                                tw.setMessage(t.text);
-                                tw.setImageUrl(t.user.profile_image_url.replace("_normal", ""));
-                                tw.setIsRetweet(false);
-                            }
-                            mData.add(tw);
-                        }
-
-                        Log.e("TAG", "Number of new tweets to be added to DB: " + mData.size());
-                        if (tweets.size() > 0) {
-                            realm.beginTransaction();
-                            realm.copyToRealmOrUpdate(mData);
-                            realm.commitTransaction();
-                        }
-                    }
-                }
-            )
+                               @Override
+                               public void onNext(List<TweetJson> tweets) {
+                                   Log.e("OBS1", "onNext");
+                                   Log.e("OBS1", "Number of new tweets found: " + tweets.size());
+                                   saveData(tweets, TweetRealm.TYPE_TIMELINE, null);
+                               }
+                           }
+                )
         );
+
+        if (fragmentNestedQuery) {
+            subscription.add(
+                twitterService.getTimeline(twitterName, maxId)
+                    .flatMap(new Func1<List<TweetJson>, Observable<TweetJson>>() {
+                        @Override
+                        public Observable<TweetJson> call(List<TweetJson> timelineJsons) {
+                            return Observable.from(timelineJsons);
+                        }
+                    })
+                    .filter(new Func1<TweetJson, Boolean>() {
+                        @Override
+                        public Boolean call(TweetJson timelineJson) {
+                            return (timelineJson.retweeted_status != null);
+                        }
+                    })
+                    .flatMap(new Func1<TweetJson, Observable<TweetTuple>>() {
+                        @Override
+                        public Observable<TweetTuple> call(final TweetJson timelineJson) {
+                            final String userName = timelineJson.retweeted_status.user.screen_name;
+                            return Observable.zip(
+                                twitterService.getTimeline(userName, null),
+                                twitterService.getFavourites(userName, null),
+                                new Func2<List<TweetJson>, List<TweetJson>, TweetTuple>() {
+                                    @Override
+                                    public TweetTuple call(List<TweetJson> timelineJsons, List<TweetJson> favoritesJsons) {
+                                        TweetTuple tweetTuple = new TweetTuple();
+                                        tweetTuple.setTimeline(timelineJsons);
+                                        Map<String, List<TweetJson>> fav = new HashMap<>();
+                                        fav.put(userName, favoritesJsons);
+                                        tweetTuple.setFavorites(fav);
+                                        return tweetTuple;
+                                    }
+                                }
+                            );
+                        }
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .unsubscribeOn(Schedulers.computation())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Observer<TweetTuple>() {
+                           @Override
+                           public void onCompleted() {
+                               Log.e("OBS2", "onComplete");
+                           }
+
+                           @Override
+                           public void onError(Throwable e) {
+                               Log.e("OBS2", "onError " + e.toString());
+                           }
+
+                           @Override
+                           public void onNext(TweetTuple tweetTuple) {
+                               Log.e("OBS2", "onNext");
+                               Log.e("OBS2", "Number of new timelines found: " + tweetTuple.getTimeline().size());
+                               saveData(tweetTuple.getTimeline(), TweetRealm.TYPE_TIMELINE, null);
+                               Log.e("OBS2", "Number of new favorites found: " + tweetTuple.getFavorites().size());
+                               Map<String, List<TweetJson>> favs = tweetTuple.getFavorites();
+                               for (String key : favs.keySet()) {
+                                   saveData(favs.get(key), TweetRealm.TYPE_FAVORITES, key);
+                               }
+                           }
+                       }
+                    )
+            );
+        }
+    }
+
+    private void saveData(List<TweetJson> data, int type, String favoritesOwner) {
+        List<TweetRealm> mData = new ArrayList<>();
+        for (TweetJson t : data) {
+            TweetRealm tw = new TweetRealm();
+            tw.setId(t.id);
+            if (type == TweetRealm.TYPE_FAVORITES) {
+                tw.setOwner(favoritesOwner);
+            } else {
+                tw.setOwner(t.user.screen_name);
+            }
+            tw.setType(type);
+            if (t.retweeted_status != null) {
+                tw.setUserName(t.retweeted_status.user.screen_name);
+                tw.setMessage(t.retweeted_status.text);
+                tw.setImageUrl(t.retweeted_status.user.profile_image_url.replace("_normal", ""));
+                tw.setIsRetweet(true);
+            } else {
+                tw.setUserName(t.user.screen_name);
+                tw.setMessage(t.text);
+                tw.setImageUrl(t.user.profile_image_url.replace("_normal", ""));
+                tw.setIsRetweet(false);
+            }
+            mData.add(tw);
+        }
+
+        Log.e("OBS", "Number of new tweets to be added to DB: " + mData.size());
+        if (data.size() > 0) {
+            realm.beginTransaction();
+            realm.copyToRealmOrUpdate(mData);
+            realm.commitTransaction();
+        }
     }
 }

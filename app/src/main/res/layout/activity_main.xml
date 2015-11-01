@@ -3,14 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/activity_vertical_margin"
     android:orientation="vertical"
     tools:context=".MainActivity">
+
+    <include layout="@layout/toolbar" />
 
     <EditText
         android:id="@+id/edit_text_twitter_id"
         android:hint="@string/twitter_id_hint"
         android:layout_marginTop="@dimen/activity_horizontal_margin"
+        android:layout_marginLeft="@dimen/activity_horizontal_margin"
+        android:layout_marginRight="@dimen/activity_horizontal_margin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
@@ -18,6 +21,8 @@
         android:id="@+id/text_view_twitter_id_error"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/activity_horizontal_margin"
+        android:layout_marginRight="@dimen/activity_horizontal_margin"
         android:text="@string/twitter_id_error"
         android:textColor="@android:color/holo_red_dark"
         android:visibility="gone" />
@@ -25,6 +30,8 @@
     <Button
         android:id="@+id/button_search"
         android:text="@string/search_button"
+        android:layout_marginLeft="@dimen/activity_horizontal_margin"
+        android:layout_marginRight="@dimen/activity_horizontal_margin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
