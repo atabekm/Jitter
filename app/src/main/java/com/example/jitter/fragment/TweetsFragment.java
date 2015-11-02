@@ -42,12 +42,13 @@ import rx.subscriptions.CompositeSubscription;
 
 public class TweetsFragment extends Fragment {
     private SwipeRefreshLayout mSwipeRefreshLayout;
-    private CompositeSubscription subscription = new CompositeSubscription();
+    private CompositeSubscription subscription;
     private String twitterName;
     private int fragmentType;
     private boolean fragmentListClickable;
-    private boolean fragmentNestedQuery;
+    private int fragmentDownloadType;
     private Realm realm;
+    private String TAG = TweetsFragment.class.getName();
 
     public static TweetsFragment getInstance(Bundle args) {
         TweetsFragment fragment = new TweetsFragment();
@@ -63,8 +64,9 @@ public class TweetsFragment extends Fragment {
         twitterName = args.getString(Constants.TWITTER_USER_NAME);
         fragmentType = args.getInt(Constants.ADAPTER_TYPE);
         fragmentListClickable = args.getBoolean(Constants.ADAPTER_LIST_CLICKABLE);
-        fragmentNestedQuery = args.getBoolean(Constants.ADAPTER_NESTED_QUERY);
+        fragmentDownloadType = args.getInt(Constants.ADAPTER_DOWNLOAD_TYPE);
 
+        subscription = new CompositeSubscription();
         realm = Realm.getDefaultInstance();
     }
 
@@ -102,10 +104,10 @@ public class TweetsFragment extends Fragment {
                         .equalTo("owner", twitterName)
                         .equalTo("type", fragmentType)
                         .findAll();
-        Log.e("TAG", "Number of search results: " + data.size());
+        Log.e(TAG, "Number of search results: " + data.size());
         if (data.size() > 0) {
             maxId = data.max("id").toString();
-            Log.e("TAG", "Number of max id: " + maxId);
+            Log.e(TAG, "Number of max id: " + maxId);
         }
         data.sort("id", RealmResults.SORT_ORDER_DESCENDING);
         RealmAdapter adapter = new RealmAdapter(getActivity(), data);
@@ -135,14 +137,14 @@ public class TweetsFragment extends Fragment {
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                Log.e("TAG", "onRefresh");
+                Log.e(TAG, "onRefresh");
                 mSwipeRefreshLayout.setRefreshing(true);
                 String id = realm.where(TweetRealm.class)
                         .equalTo("owner", twitterName)
                         .equalTo("type", fragmentType)
                         .findAll()
                         .max("id").toString();
-                Log.e("TAG", "last twitter id onRefresh: " + id);
+                Log.e(TAG, "last twitter id onRefresh: " + id);
                 getData(id);
             }
         });
@@ -159,98 +161,138 @@ public class TweetsFragment extends Fragment {
 
         final TwitterService twitterService = retrofit.create(TwitterService.class);
 
-        subscription.add(
-            twitterService.getTimeline(twitterName, maxId)
-                .subscribeOn(Schedulers.io())
-                .unsubscribeOn(Schedulers.computation())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<TweetJson>>() {
-                               @Override
-                               public void onCompleted() {
-                                   Log.e("OBS1", "onCompleted");
-                                   if (mSwipeRefreshLayout.isRefreshing()) {
-                                       mSwipeRefreshLayout.setRefreshing(false);
-                                   }
-                               }
-
-                               @Override
-                               public void onError(Throwable e) {
-                                   Log.e("OBS1", e.getMessage());
-                               }
-
-                               @Override
-                               public void onNext(List<TweetJson> tweets) {
-                                   Log.e("OBS1", "onNext");
-                                   Log.e("OBS1", "Number of new tweets found: " + tweets.size());
-                                   saveData(tweets, TweetRealm.TYPE_TIMELINE, null);
-                               }
-                           }
-                )
-        );
-
-        if (fragmentNestedQuery) {
+        if (fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_ALL ||
+                fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_TIMELINE) {
+            Log.e(TAG, "fetching timeline");
             subscription.add(
-                twitterService.getTimeline(twitterName, maxId)
-                    .flatMap(new Func1<List<TweetJson>, Observable<TweetJson>>() {
-                        @Override
-                        public Observable<TweetJson> call(List<TweetJson> timelineJsons) {
-                            return Observable.from(timelineJsons);
-                        }
-                    })
-                    .filter(new Func1<TweetJson, Boolean>() {
-                        @Override
-                        public Boolean call(TweetJson timelineJson) {
-                            return (timelineJson.retweeted_status != null);
-                        }
-                    })
-                    .flatMap(new Func1<TweetJson, Observable<TweetTuple>>() {
-                        @Override
-                        public Observable<TweetTuple> call(final TweetJson timelineJson) {
-                            final String userName = timelineJson.retweeted_status.user.screen_name;
-                            return Observable.zip(
-                                twitterService.getTimeline(userName, null),
-                                twitterService.getFavourites(userName, null),
-                                new Func2<List<TweetJson>, List<TweetJson>, TweetTuple>() {
-                                    @Override
-                                    public TweetTuple call(List<TweetJson> timelineJsons, List<TweetJson> favoritesJsons) {
-                                        TweetTuple tweetTuple = new TweetTuple();
-                                        tweetTuple.setTimeline(timelineJsons);
-                                        Map<String, List<TweetJson>> fav = new HashMap<>();
-                                        fav.put(userName, favoritesJsons);
-                                        tweetTuple.setFavorites(fav);
-                                        return tweetTuple;
-                                    }
+                    twitterService.getTimeline(twitterName, maxId)
+                            .subscribeOn(Schedulers.io())
+                            .unsubscribeOn(Schedulers.computation())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Observer<List<TweetJson>>() {
+                                           @Override
+                                           public void onCompleted() {
+                                               Log.e(TAG, "onCompleted");
+                                               if (mSwipeRefreshLayout.isRefreshing()) {
+                                                   mSwipeRefreshLayout.setRefreshing(false);
+                                               }
+                                           }
+
+                                           @Override
+                                           public void onError(Throwable e) {
+                                               Log.e(TAG, e.getMessage());
+                                           }
+
+                                           @Override
+                                           public void onNext(List<TweetJson> tweets) {
+                                               Log.e(TAG, "onNext");
+                                               Log.e(TAG, "Number of new tweets found: " + tweets.size());
+                                               saveData(tweets, TweetRealm.TYPE_TIMELINE, null);
+                                           }
+                                       }
+                            )
+            );
+        }
+
+        if (fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_ALL) {
+            Log.e(TAG, "fetching others timeline&favorites");
+            subscription.add(
+                    twitterService.getTimeline(twitterName, maxId)
+                            .flatMap(new Func1<List<TweetJson>, Observable<TweetJson>>() {
+                                @Override
+                                public Observable<TweetJson> call(List<TweetJson> timelineJsons) {
+                                    return Observable.from(timelineJsons);
                                 }
-                            );
-                        }
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .unsubscribeOn(Schedulers.computation())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<TweetTuple>() {
-                           @Override
-                           public void onCompleted() {
-                               Log.e("OBS2", "onComplete");
-                           }
+                            })
+                            .filter(new Func1<TweetJson, Boolean>() {
+                                @Override
+                                public Boolean call(TweetJson timelineJson) {
+                                    return (timelineJson.retweeted_status != null);
+                                }
+                            })
+                            .flatMap(new Func1<TweetJson, Observable<TweetTuple>>() {
+                                @Override
+                                public Observable<TweetTuple> call(final TweetJson tweetJson) {
+                                    final String userName = tweetJson.retweeted_status.user.screen_name;
+                                    return Observable.zip(
+                                            twitterService.getTimeline(userName, null),
+                                            twitterService.getFavorites(userName, null),
+                                            new Func2<List<TweetJson>, List<TweetJson>, TweetTuple>() {
+                                                @Override
+                                                public TweetTuple call(List<TweetJson> timelineJsons, List<TweetJson> favoritesJsons) {
+                                                    TweetTuple tweetTuple = new TweetTuple();
+                                                    tweetTuple.setTimeline(timelineJsons);
+                                                    Map<String, List<TweetJson>> fav = new HashMap<>();
+                                                    fav.put(userName, favoritesJsons);
+                                                    tweetTuple.setFavorites(fav);
+                                                    return tweetTuple;
+                                                }
+                                            }
+                                    );
+                                }
+                            })
+                            .subscribeOn(Schedulers.io())
+                            .unsubscribeOn(Schedulers.computation())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Observer<TweetTuple>() {
+                                           @Override
+                                           public void onCompleted() {
+                                               Log.e(TAG, "onComplete");
+                                           }
 
-                           @Override
-                           public void onError(Throwable e) {
-                               Log.e("OBS2", "onError " + e.toString());
-                           }
+                                           @Override
+                                           public void onError(Throwable e) {
+                                               Log.e(TAG, "onError " + e.toString());
+                                           }
 
-                           @Override
-                           public void onNext(TweetTuple tweetTuple) {
-                               Log.e("OBS2", "onNext");
-                               Log.e("OBS2", "Number of new timelines found: " + tweetTuple.getTimeline().size());
-                               saveData(tweetTuple.getTimeline(), TweetRealm.TYPE_TIMELINE, null);
-                               Log.e("OBS2", "Number of new favorites found: " + tweetTuple.getFavorites().size());
-                               Map<String, List<TweetJson>> favs = tweetTuple.getFavorites();
-                               for (String key : favs.keySet()) {
-                                   saveData(favs.get(key), TweetRealm.TYPE_FAVORITES, key);
-                               }
-                           }
-                       }
-                    )
+                                           @Override
+                                           public void onNext(TweetTuple tweetTuple) {
+                                               Log.e(TAG, "onNext");
+                                               Log.e(TAG, "Number of new timelines found: " + tweetTuple.getTimeline().size());
+                                               saveData(tweetTuple.getTimeline(), TweetRealm.TYPE_TIMELINE, null);
+                                               Log.e(TAG, "Number of new favorites found: " + tweetTuple.getFavorites().size());
+                                               Map<String, List<TweetJson>> favs = tweetTuple.getFavorites();
+                                               for (String key : favs.keySet()) {
+                                                   saveData(favs.get(key), TweetRealm.TYPE_FAVORITES, key);
+                                               }
+                                           }
+                                       }
+                            )
+            );
+        }
+
+        if (fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_FAVORITES) {
+            Log.e(TAG, "fetching favorites");
+            subscription.add(
+                    twitterService.getFavorites(twitterName, null)
+                            .subscribeOn(Schedulers.io())
+                            .unsubscribeOn(Schedulers.computation())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Observer<List<TweetJson>>() {
+                                           @Override
+                                           public void onCompleted() {
+                                               Log.e(TAG, "onCompleted");
+                                               if (mSwipeRefreshLayout.isRefreshing()) {
+                                                   mSwipeRefreshLayout.setRefreshing(false);
+                                               }
+                                           }
+
+                                           @Override
+                                           public void onError(Throwable e) {
+                                               Log.e(TAG, e.getMessage());
+                                               if (mSwipeRefreshLayout.isRefreshing()) {
+                                                   mSwipeRefreshLayout.setRefreshing(false);
+                                               }
+                                           }
+
+                                           @Override
+                                           public void onNext(List<TweetJson> tweets) {
+                                               Log.e(TAG, "onNext");
+                                               Log.e(TAG, "Number of new tweets found: " + tweets.size());
+                                               saveData(tweets, TweetRealm.TYPE_FAVORITES, null);
+                                           }
+                                       }
+                            )
             );
         }
     }
@@ -280,7 +322,7 @@ public class TweetsFragment extends Fragment {
             mData.add(tw);
         }
 
-        Log.e("OBS", "Number of new tweets to be added to DB: " + mData.size());
+        Log.e(TAG, "Number of new tweets to be added to DB: " + mData.size());
         if (data.size() > 0) {
             realm.beginTransaction();
             realm.copyToRealmOrUpdate(mData);

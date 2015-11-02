@@ -18,7 +18,7 @@ public interface TwitterService {
 
     @Headers({Constants.TWITTER_API_HEADER})
     @GET("/1.1/favorites/list.json")
-    Observable<List<TweetJson>> getFavourites(
+    Observable<List<TweetJson>> getFavorites(
             @Query("screen_name") String screen_name,
             @Query("since_id") String since_id);
 }

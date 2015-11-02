@@ -4,7 +4,10 @@ public class Constants {
     public static final String TWITTER_USER_NAME = "twitter_user_name";
     public static final String ADAPTER_TYPE = "adapter_type";
     public static final String ADAPTER_LIST_CLICKABLE = "adapter_list_clickable";
-    public static final String ADAPTER_NESTED_QUERY = "adapter_nested_query";
+    public static final String ADAPTER_DOWNLOAD_TYPE = "adapter_download_type";
+    public static final int ADAPTER_DOWNLOAD_TYPE_ALL = 0;
+    public static final int ADAPTER_DOWNLOAD_TYPE_TIMELINE = 1;
+    public static final int ADAPTER_DOWNLOAD_TYPE_FAVORITES = 2;
 
 
     public static final String TWITTER_BASE_API = "https://api.twitter.com";

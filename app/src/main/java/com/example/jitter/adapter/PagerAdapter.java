@@ -25,14 +25,14 @@ public class PagerAdapter extends FragmentPagerAdapter {
                 argsTimeline.putString(Constants.TWITTER_USER_NAME, twitterName);
                 argsTimeline.putInt(Constants.ADAPTER_TYPE, TweetRealm.TYPE_TIMELINE);
                 argsTimeline.putBoolean(Constants.ADAPTER_LIST_CLICKABLE, false);
-                argsTimeline.putBoolean(Constants.ADAPTER_NESTED_QUERY, false);
+                argsTimeline.putInt(Constants.ADAPTER_DOWNLOAD_TYPE, Constants.ADAPTER_DOWNLOAD_TYPE_TIMELINE);
                 return TweetsFragment.getInstance(argsTimeline);
             case 1:
                 Bundle argsFavorites = new Bundle();
                 argsFavorites.putString(Constants.TWITTER_USER_NAME, twitterName);
                 argsFavorites.putInt(Constants.ADAPTER_TYPE, TweetRealm.TYPE_FAVORITES);
                 argsFavorites.putBoolean(Constants.ADAPTER_LIST_CLICKABLE, false);
-                argsFavorites.putBoolean(Constants.ADAPTER_NESTED_QUERY, false);
+                argsFavorites.putInt(Constants.ADAPTER_DOWNLOAD_TYPE, Constants.ADAPTER_DOWNLOAD_TYPE_FAVORITES);
                 return TweetsFragment.getInstance(argsFavorites);
             default:
                 return null;

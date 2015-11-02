@@ -32,7 +32,7 @@ public class UsersActivity extends AppCompatActivity {
             arguments.putString(Constants.TWITTER_USER_NAME, twitterName);
             arguments.putInt(Constants.ADAPTER_TYPE, TweetRealm.TYPE_TIMELINE);
             arguments.putBoolean(Constants.ADAPTER_LIST_CLICKABLE, true);
-            arguments.putBoolean(Constants.ADAPTER_NESTED_QUERY, true);
+            arguments.putInt(Constants.ADAPTER_DOWNLOAD_TYPE, Constants.ADAPTER_DOWNLOAD_TYPE_ALL);
 
             TweetsFragment fragment = new TweetsFragment();
             fragment.setArguments(arguments);
