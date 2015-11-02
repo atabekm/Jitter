@@ -126,7 +126,6 @@ public class TweetsFragment extends Fragment {
                         intent.putExtra(Constants.TWITTER_USER_NAME, user);
                         startActivity(intent);
                     }
-
                 }
             });
         }
@@ -139,12 +138,17 @@ public class TweetsFragment extends Fragment {
             public void onRefresh() {
                 Log.e(TAG, "onRefresh");
                 mSwipeRefreshLayout.setRefreshing(true);
-                String id = realm.where(TweetRealm.class)
+                Number maxId = realm.where(TweetRealm.class)
                         .equalTo("owner", twitterName)
                         .equalTo("type", fragmentType)
                         .findAll()
-                        .max("id").toString();
-                Log.e(TAG, "last twitter id onRefresh: " + id);
+                        .max("id");
+                String id = null;
+                if (maxId != null) {
+                    id = maxId.toString();
+                    Log.e(TAG, "last twitter id onRefresh: " + id);
+                }
+
                 getData(id);
             }
         });
@@ -264,7 +268,7 @@ public class TweetsFragment extends Fragment {
         if (fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_FAVORITES) {
             Log.e(TAG, "fetching favorites");
             subscription.add(
-                    twitterService.getFavorites(twitterName, null)
+                    twitterService.getFavorites(twitterName, maxId)
                             .subscribeOn(Schedulers.io())
                             .unsubscribeOn(Schedulers.computation())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -289,7 +293,7 @@ public class TweetsFragment extends Fragment {
                                            public void onNext(List<TweetJson> tweets) {
                                                Log.e(TAG, "onNext");
                                                Log.e(TAG, "Number of new tweets found: " + tweets.size());
-                                               saveData(tweets, TweetRealm.TYPE_FAVORITES, null);
+                                               saveData(tweets, TweetRealm.TYPE_FAVORITES, twitterName);
                                            }
                                        }
                             )
