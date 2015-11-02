@@ -26,8 +26,8 @@ public class MainActivity extends AppCompatActivity {
     public void search() {
         String twitterName = etTwitterName.getText().toString();
         tvTwitterNameError.setVisibility(View.GONE);
-        if (twitterName.length() > 1 &&
-                twitterName.length() <= Constants.TWITTER_USERNAME_SIZE &&
+        if (twitterName.length() >= Constants.TWITTER_USERNAME_MIN_LENGTH &&
+                twitterName.length() <= Constants.TWITTER_USERNAME_MAX_LENGTH &&
                 twitterName.matches(Constants.TWITTER_USERNAME_PATTERN)) {
             Intent intent = new Intent(MainActivity.this, UsersActivity.class);
             intent.putExtra(Constants.TWITTER_USER_NAME, twitterName);
@@ -46,7 +46,5 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         setSupportActionBar(toolbar);
-
-        etTwitterName.setText("jack");
     }
 }

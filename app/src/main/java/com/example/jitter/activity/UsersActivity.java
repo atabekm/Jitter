@@ -28,8 +28,7 @@ public class UsersActivity extends AppCompatActivity {
 
         toolbar.setTitle("Timeline for @" + twitterName);
         setSupportActionBar(toolbar);
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         if (savedInstanceState == null) {
             Bundle arguments = new Bundle();

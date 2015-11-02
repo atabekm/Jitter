@@ -34,18 +34,18 @@ public class RealmAdapter extends RealmBaseAdapter<TweetRealm> implements ListAd
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View view, ViewGroup parent) {
         ViewHolder viewHolder;
-        if (convertView == null) {
-            convertView = inflater.inflate(R.layout.list_row_item, parent, false);
-            viewHolder = new ViewHolder(convertView);
-            convertView.setTag(viewHolder);
+        if (view == null) {
+            view = inflater.inflate(R.layout.list_row_item, parent, false);
+            viewHolder = new ViewHolder(view);
+            view.setTag(viewHolder);
         } else {
-            viewHolder = (ViewHolder) convertView.getTag();
+            viewHolder = (ViewHolder) view.getTag();
         }
 
         TweetRealm item = realmResults.get(position);
-        viewHolder.tvUsername.setText("@" + item.getUserName());
+        viewHolder.tvUsername.setText(String.format("@%s", item.getUserName()));
         viewHolder.tvText.setText(item.getMessage());
         Picasso.with(context)
                 .load(item.getImageUrl())
@@ -58,6 +58,6 @@ public class RealmAdapter extends RealmBaseAdapter<TweetRealm> implements ListAd
             viewHolder.ivIsRetweet.setVisibility(View.GONE);
         }
 
-        return convertView;
+        return view;
     }
 }

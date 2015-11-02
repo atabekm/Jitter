@@ -20,14 +20,14 @@ public class PagerAdapter extends FragmentPagerAdapter {
     @Override
     public Fragment getItem(int position) {
         switch (position) {
-            case 0:
+            case TweetRealm.TYPE_TIMELINE:
                 Bundle argsTimeline = new Bundle();
                 argsTimeline.putString(Constants.TWITTER_USER_NAME, twitterName);
                 argsTimeline.putInt(Constants.ADAPTER_TYPE, TweetRealm.TYPE_TIMELINE);
                 argsTimeline.putBoolean(Constants.ADAPTER_LIST_CLICKABLE, false);
                 argsTimeline.putInt(Constants.ADAPTER_DOWNLOAD_TYPE, Constants.ADAPTER_DOWNLOAD_TYPE_TIMELINE);
                 return TweetsFragment.getInstance(argsTimeline);
-            case 1:
+            case TweetRealm.TYPE_FAVORITES:
                 Bundle argsFavorites = new Bundle();
                 argsFavorites.putString(Constants.TWITTER_USER_NAME, twitterName);
                 argsFavorites.putInt(Constants.ADAPTER_TYPE, TweetRealm.TYPE_FAVORITES);

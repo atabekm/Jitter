@@ -19,7 +19,8 @@ import com.example.jitter.adapter.RealmAdapter;
 import com.example.jitter.data.TweetTuple;
 import com.example.jitter.data.TweetJson;
 import com.example.jitter.data.TweetRealm;
-import com.example.jitter.data.TwitterService;
+import com.example.jitter.data.TwitterApi;
+import com.example.jitter.di.MyApp;
 import com.example.jitter.util.Constants;
 
 import java.util.ArrayList;
@@ -27,13 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import io.realm.Realm;
 import io.realm.RealmResults;
-import retrofit.GsonConverterFactory;
-import retrofit.Retrofit;
-import retrofit.RxJavaCallAdapterFactory;
 import rx.Observable;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
@@ -45,6 +45,8 @@ import rx.subscriptions.CompositeSubscription;
 public class TweetsFragment extends Fragment {
     @Bind(R.id.list_view) ListView listView;
     @Bind(R.id.swipe_to_refresh) SwipeRefreshLayout mSwipeRefreshLayout;
+
+    @Inject TwitterApi twitterApi;
 
     private CompositeSubscription subscription;
     private String twitterName;
@@ -63,6 +65,7 @@ public class TweetsFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        MyApp.getComponent(getActivity()).inject(this);
 
         Bundle args = getArguments();
         twitterName = args.getString(Constants.TWITTER_USER_NAME);
@@ -114,9 +117,10 @@ public class TweetsFragment extends Fragment {
             Log.e(TAG, "Number of max id: " + maxId);
         }
         data.sort("id", RealmResults.SORT_ORDER_DESCENDING);
-        RealmAdapter adapter = new RealmAdapter(getActivity(), data);
 
+        RealmAdapter adapter = new RealmAdapter(getActivity(), data);
         listView.setAdapter(adapter);
+
         if (fragmentListClickable) {
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
@@ -160,19 +164,11 @@ public class TweetsFragment extends Fragment {
     }
 
     private void getData(String maxId) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(Constants.TWITTER_BASE_API)
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
-
-        final TwitterService twitterService = retrofit.create(TwitterService.class);
-
         if (fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_ALL ||
                 fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_TIMELINE) {
             Log.e(TAG, "fetching timeline");
             subscription.add(
-                    twitterService.getTimeline(twitterName, maxId)
+                    twitterApi.getTimeline(twitterName, maxId)
                             .subscribeOn(Schedulers.io())
                             .unsubscribeOn(Schedulers.computation())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -188,6 +184,9 @@ public class TweetsFragment extends Fragment {
                                            @Override
                                            public void onError(Throwable e) {
                                                Log.e(TAG, e.getMessage());
+                                               if (mSwipeRefreshLayout.isRefreshing()) {
+                                                   mSwipeRefreshLayout.setRefreshing(false);
+                                               }
                                            }
 
                                            @Override
@@ -204,7 +203,7 @@ public class TweetsFragment extends Fragment {
         if (fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_ALL) {
             Log.e(TAG, "fetching others timeline&favorites");
             subscription.add(
-                    twitterService.getTimeline(twitterName, maxId)
+                    twitterApi.getTimeline(twitterName, maxId)
                             .flatMap(new Func1<List<TweetJson>, Observable<TweetJson>>() {
                                 @Override
                                 public Observable<TweetJson> call(List<TweetJson> timelineJsons) {
@@ -222,8 +221,8 @@ public class TweetsFragment extends Fragment {
                                 public Observable<TweetTuple> call(final TweetJson tweetJson) {
                                     final String userName = tweetJson.retweeted_status.user.screen_name;
                                     return Observable.zip(
-                                            twitterService.getTimeline(userName, null),
-                                            twitterService.getFavorites(userName, null),
+                                            twitterApi.getTimeline(userName, null),
+                                            twitterApi.getFavorites(userName, null),
                                             new Func2<List<TweetJson>, List<TweetJson>, TweetTuple>() {
                                                 @Override
                                                 public TweetTuple call(List<TweetJson> timelineJsons, List<TweetJson> favoritesJsons) {
@@ -271,7 +270,7 @@ public class TweetsFragment extends Fragment {
         if (fragmentDownloadType == Constants.ADAPTER_DOWNLOAD_TYPE_FAVORITES) {
             Log.e(TAG, "fetching favorites");
             subscription.add(
-                    twitterService.getFavorites(twitterName, maxId)
+                    twitterApi.getFavorites(twitterName, maxId)
                             .subscribeOn(Schedulers.io())
                             .unsubscribeOn(Schedulers.computation())
                             .observeOn(AndroidSchedulers.mainThread())

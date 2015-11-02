@@ -9,7 +9,7 @@ import retrofit.http.Headers;
 import retrofit.http.Query;
 import rx.Observable;
 
-public interface TwitterService {
+public interface TwitterApi {
     @Headers({Constants.TWITTER_API_HEADER})
     @GET("/1.1/statuses/user_timeline.json")
     Observable<List<TweetJson>> getTimeline(
