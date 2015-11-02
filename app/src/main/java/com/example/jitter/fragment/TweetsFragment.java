@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import retrofit.GsonConverterFactory;
@@ -41,7 +43,9 @@ import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
 public class TweetsFragment extends Fragment {
-    private SwipeRefreshLayout mSwipeRefreshLayout;
+    @Bind(R.id.list_view) ListView listView;
+    @Bind(R.id.swipe_to_refresh) SwipeRefreshLayout mSwipeRefreshLayout;
+
     private CompositeSubscription subscription;
     private String twitterName;
     private int fragmentType;
@@ -96,7 +100,7 @@ public class TweetsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tweets, container, false);
-        view.setTag(Math.random());
+        ButterKnife.bind(this, view);
         String maxId = null;
 
         RealmResults<TweetRealm> data =
@@ -111,7 +115,7 @@ public class TweetsFragment extends Fragment {
         }
         data.sort("id", RealmResults.SORT_ORDER_DESCENDING);
         RealmAdapter adapter = new RealmAdapter(getActivity(), data);
-        ListView listView = (ListView) view.findViewById(R.id.list_view);
+
         listView.setAdapter(adapter);
         if (fragmentListClickable) {
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -132,7 +136,6 @@ public class TweetsFragment extends Fragment {
 
         getData(maxId);
 
-        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_to_refresh);
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {

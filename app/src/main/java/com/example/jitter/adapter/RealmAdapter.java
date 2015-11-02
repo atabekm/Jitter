@@ -11,16 +11,22 @@ import com.example.jitter.R;
 import com.example.jitter.data.TweetRealm;
 import com.squareup.picasso.Picasso;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import io.realm.RealmBaseAdapter;
 import io.realm.RealmResults;
 
 public class RealmAdapter extends RealmBaseAdapter<TweetRealm> implements ListAdapter {
 
-    private static class ViewHolder {
-        private ImageView ivAvatar;
-        private ImageView ivIsRetweet;
-        private TextView tvUsername;
-        private TextView tvText;
+    static class ViewHolder {
+        @Bind(R.id.avatar_image) ImageView ivAvatar;
+        @Bind(R.id.retweet_image) ImageView ivIsRetweet;
+        @Bind(R.id.author) TextView tvUsername;
+        @Bind(R.id.tweet) TextView tvText;
+
+        public ViewHolder(View view) {
+            ButterKnife.bind(this, view);
+        }
     }
 
     public RealmAdapter(Context context, RealmResults<TweetRealm> realmResults) {
@@ -32,11 +38,7 @@ public class RealmAdapter extends RealmBaseAdapter<TweetRealm> implements ListAd
         ViewHolder viewHolder;
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.list_row_item, parent, false);
-            viewHolder = new ViewHolder();
-            viewHolder.ivAvatar = (ImageView) convertView.findViewById(R.id.avatar_image);
-            viewHolder.ivIsRetweet = (ImageView) convertView.findViewById(R.id.retweet_image);
-            viewHolder.tvUsername = (TextView) convertView.findViewById(R.id.author);
-            viewHolder.tvText = (TextView) convertView.findViewById(R.id.tweet);
+            viewHolder = new ViewHolder(convertView);
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (ViewHolder) convertView.getTag();

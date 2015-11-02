@@ -12,16 +12,20 @@ import com.example.jitter.util.Constants;
 import com.example.jitter.R;
 import com.example.jitter.fragment.TweetsFragment;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+
 public class UsersActivity extends AppCompatActivity {
+    @Bind(R.id.toolbar) Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_users);
+        ButterKnife.bind(this);
 
         String twitterName = getIntent().getStringExtra(Constants.TWITTER_USER_NAME);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle("Timeline for @" + twitterName);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
