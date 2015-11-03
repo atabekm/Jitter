@@ -9,10 +9,10 @@ public class TweetJson {
     public final Retweeted_Status retweeted_status;
     public final String text;
 
-    public TweetJson(long id, String screen_name, String text, String profile_image_url, String original_name, String original_text, String original_image_url) {
+    public TweetJson(long id, String screen_name, String text, String profile_image_url, String retweeter_name, String retweet_text, String retweeter_image_url) {
         this.id = id;
         user = new User(screen_name, profile_image_url);
-        retweeted_status = new Retweeted_Status(original_text, original_name, original_image_url);
+        retweeted_status = new Retweeted_Status(retweet_text, retweeter_name, retweeter_image_url);
         this.text = text;
     }
 
