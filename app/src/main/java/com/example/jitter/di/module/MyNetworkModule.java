@@ -21,12 +21,18 @@ public class MyNetworkModule {
 
     @Provides
     @PerApp
-    Retrofit provideRetrofit(GsonConverterFactory gson, RxJavaCallAdapterFactory rx) {
+    Retrofit provideRetrofit(String api, GsonConverterFactory gson, RxJavaCallAdapterFactory rx) {
         return new Retrofit.Builder()
-                .baseUrl(Constants.TWITTER_BASE_API)
+                .baseUrl(api)
                 .addConverterFactory(gson)
                 .addCallAdapterFactory(rx)
                 .build();
+    }
+
+    @Provides
+    @PerApp
+    String provideApi() {
+        return Constants.TWITTER_BASE_API;
     }
 
     @Provides

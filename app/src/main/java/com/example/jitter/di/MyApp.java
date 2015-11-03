@@ -3,6 +3,7 @@ package com.example.jitter.di;
 import android.app.Application;
 import android.content.Context;
 
+import com.example.jitter.di.component.DaggerMyComponent;
 import com.example.jitter.di.component.MyComponent;
 import com.example.jitter.di.module.MyNetworkModule;
 

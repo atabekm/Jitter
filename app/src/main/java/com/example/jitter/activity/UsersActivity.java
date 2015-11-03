@@ -2,7 +2,6 @@ package com.example.jitter.activity;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
@@ -13,10 +12,13 @@ import com.example.jitter.R;
 import com.example.jitter.fragment.TweetsFragment;
 
 import butterknife.Bind;
+import butterknife.BindString;
 import butterknife.ButterKnife;
 
 public class UsersActivity extends AppCompatActivity {
     @Bind(R.id.toolbar) Toolbar toolbar;
+
+    @BindString(R.string.timeline_for) String timelineFor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,12 +26,14 @@ public class UsersActivity extends AppCompatActivity {
         setContentView(R.layout.activity_users);
         ButterKnife.bind(this);
 
+        // get twitter username passed from previous activity via intents
         String twitterName = getIntent().getStringExtra(Constants.TWITTER_USER_NAME);
-
-        toolbar.setTitle("Timeline for @" + twitterName);
+        // set toolbar and its title
+        toolbar.setTitle(String.format("%s @%s", timelineFor, twitterName));
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        // create new fragment and pass
         if (savedInstanceState == null) {
             Bundle arguments = new Bundle();
             arguments.putString(Constants.TWITTER_USER_NAME, twitterName);
@@ -51,6 +55,8 @@ public class UsersActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        // when clicking home button it should work as back button, otherwise previous activity
+        // might not be correctly created
         switch (item.getItemId()) {
             case android.R.id.home:
                 onBackPressed();

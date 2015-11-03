@@ -21,7 +21,7 @@
         android:layout_alignParentTop="true"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
-        android:text="jack"
+        android:textColor="@android:color/black"
         android:textStyle="bold"
         android:textSize="16sp"/>
 
@@ -34,14 +34,13 @@
         android:paddingTop="5dp"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
-        android:text="This is my tweet"
         android:textSize="14sp"/>
 
     <ImageView
         android:id="@+id/retweet_image"
-        android:layout_width="10dp"
-        android:layout_height="10dp"
-        android:background="@android:color/darker_gray"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_repeat_black_48dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
         android:scaleType="centerCrop"

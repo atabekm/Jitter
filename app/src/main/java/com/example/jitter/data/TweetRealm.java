@@ -3,6 +3,9 @@ package com.example.jitter.data;
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
+/**
+ * Realm data model for Twitter data
+ */
 public class TweetRealm extends RealmObject {
     public static final int TYPE_TIMELINE = 0;
     public static final int TYPE_FAVORITES = 1;

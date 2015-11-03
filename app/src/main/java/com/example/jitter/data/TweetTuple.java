@@ -3,6 +3,10 @@ package com.example.jitter.data;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A class to hold List and Map structures, used in TweetsFragment to ease argument passing between
+ * RxJava observables
+ */
 public class TweetTuple {
     private List<TweetJson> timeline;
     private Map<String, List<TweetJson>> favorites;

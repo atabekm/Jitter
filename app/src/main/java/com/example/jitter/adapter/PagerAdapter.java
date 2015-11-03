@@ -10,6 +10,7 @@ import com.example.jitter.fragment.TweetsFragment;
 import com.example.jitter.util.Constants;
 
 public class PagerAdapter extends FragmentPagerAdapter {
+    private final int NUMBER_OF_FRAGMENTS = 2;
     private String twitterName;
 
     public PagerAdapter(FragmentManager fm, String twitterName) {
@@ -19,6 +20,7 @@ public class PagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
+        // create fragment with argument according to its type (timeline, or favorites)
         switch (position) {
             case TweetRealm.TYPE_TIMELINE:
                 Bundle argsTimeline = new Bundle();
@@ -26,14 +28,21 @@ public class PagerAdapter extends FragmentPagerAdapter {
                 argsTimeline.putInt(Constants.ADAPTER_TYPE, TweetRealm.TYPE_TIMELINE);
                 argsTimeline.putBoolean(Constants.ADAPTER_LIST_CLICKABLE, false);
                 argsTimeline.putInt(Constants.ADAPTER_DOWNLOAD_TYPE, Constants.ADAPTER_DOWNLOAD_TYPE_TIMELINE);
-                return TweetsFragment.getInstance(argsTimeline);
+
+                TweetsFragment fragmentTimeline = new TweetsFragment();
+                fragmentTimeline.setArguments(argsTimeline);
+                return fragmentTimeline;
+
             case TweetRealm.TYPE_FAVORITES:
                 Bundle argsFavorites = new Bundle();
                 argsFavorites.putString(Constants.TWITTER_USER_NAME, twitterName);
                 argsFavorites.putInt(Constants.ADAPTER_TYPE, TweetRealm.TYPE_FAVORITES);
                 argsFavorites.putBoolean(Constants.ADAPTER_LIST_CLICKABLE, false);
                 argsFavorites.putInt(Constants.ADAPTER_DOWNLOAD_TYPE, Constants.ADAPTER_DOWNLOAD_TYPE_FAVORITES);
-                return TweetsFragment.getInstance(argsFavorites);
+
+                TweetsFragment fragmentFavorites = new TweetsFragment();
+                fragmentFavorites.setArguments(argsFavorites);
+                return fragmentFavorites;
             default:
                 return null;
         }
@@ -41,6 +50,6 @@ public class PagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public int getCount() {
-        return 2;
+        return NUMBER_OF_FRAGMENTS;
     }
 }

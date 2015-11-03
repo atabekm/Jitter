@@ -35,6 +35,7 @@ public class RealmAdapter extends RealmBaseAdapter<TweetRealm> implements ListAd
 
     @Override
     public View getView(int position, View view, ViewGroup parent) {
+        // set or get ViewHolder instance
         ViewHolder viewHolder;
         if (view == null) {
             view = inflater.inflate(R.layout.list_row_item, parent, false);
@@ -44,6 +45,7 @@ public class RealmAdapter extends RealmBaseAdapter<TweetRealm> implements ListAd
             viewHolder = (ViewHolder) view.getTag();
         }
 
+        // set values to views retrieved from Realm
         TweetRealm item = realmResults.get(position);
         viewHolder.tvUsername.setText(String.format("@%s", item.getUserName()));
         viewHolder.tvText.setText(item.getMessage());
@@ -51,8 +53,8 @@ public class RealmAdapter extends RealmBaseAdapter<TweetRealm> implements ListAd
                 .load(item.getImageUrl())
                 .into(viewHolder.ivAvatar);
 
-        boolean isAvatar = item.getIsRetweet();
-        if (isAvatar) {
+        // if the tweet is retweet, show appropriate image
+        if (item.getIsRetweet()) {
             viewHolder.ivIsRetweet.setVisibility(View.VISIBLE);
         } else {
             viewHolder.ivIsRetweet.setVisibility(View.GONE);

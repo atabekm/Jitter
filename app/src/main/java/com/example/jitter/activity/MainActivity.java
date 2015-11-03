@@ -20,12 +20,14 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.toolbar) Toolbar toolbar;
     @Bind(R.id.edit_text_twitter_id) EditText etTwitterName;
     @Bind(R.id.text_view_twitter_id_error) TextView tvTwitterNameError;
-    @Bind(R.id.button_search) Button btnSearch;
 
     @OnClick(R.id.button_search)
     public void search() {
         String twitterName = etTwitterName.getText().toString();
         tvTwitterNameError.setVisibility(View.GONE);
+
+        // do basic validation, check for input size, and for allowed symbols
+        // if validation passes, then send intent, otherwise clear the input and show error message
         if (twitterName.length() >= Constants.TWITTER_USERNAME_MIN_LENGTH &&
                 twitterName.length() <= Constants.TWITTER_USERNAME_MAX_LENGTH &&
                 twitterName.matches(Constants.TWITTER_USERNAME_PATTERN)) {

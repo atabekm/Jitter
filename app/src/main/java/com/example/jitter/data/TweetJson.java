@@ -1,5 +1,8 @@
 package com.example.jitter.data;
 
+/**
+ * Mapper class for TwitterApi response
+ */
 public class TweetJson {
     public final long id;
     public final User user;
